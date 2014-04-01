@@ -142,7 +142,7 @@ cd ${TmpDir}
 
 ###################
 # Retrieve 
-_echo "- Retrieve of the iso file in progress..."
+_echo "Retrieve of the iso file in progress..."
 _wget ${CDRepo} MD5SUMS
 
 Search=$(grep ${IsoMsk} MD5SUMS)
@@ -159,10 +159,10 @@ fi
 _echo "Retrieved iso file is: ${IsoFile}"
 
 ###################
-_echo "- The preparation of ${DevUsb} is in progress..."
+_echo "The preparation of ${DevUsb} is in progress..."
 #cp -v ${TmpDir}/${IsoFile} ${DevUsb} ; sync
-#dd if=${TmpDir}/${IsoFile} of=${DevUsb} bs=4M ; sync
-_echo "- The preparation of ${DevUsb} is done."
+dd if=${TmpDir}/${IsoFile} of=${DevUsb} bs=4M ; sync
+_echo "The preparation of ${DevUsb} is done."
 
 ###################
 # Clean up
