@@ -123,9 +123,9 @@ do
         read PlugAnswer
         case "${PlugAnswer}" in
 		q*|Q*) _log "The user quits" ; exit;;
-		2) IsoMsk=${Arch}-CD-1.iso      ; break ;;
+		1) IsoMsk=${Arch}-CD-1.iso      ; break ;;
 		2) IsoMsk=${Arch}-kde-CD-1.iso  ; break ;;
-		5) IsoMsk=${Arch}-lxde-CD-1.iso ; break ;;
+		3) IsoMsk=${Arch}-lxde-CD-1.iso ; break ;;
 		4) IsoMsk=${Arch}-netinst.iso   ; break ;;
 		5) IsoMsk=${Arch}-xfce-CD-1.iso ; break ;;
                 *) ;;
