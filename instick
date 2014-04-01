@@ -143,13 +143,13 @@ cd ${TmpDir}
 ###################
 # Retrieve 
 _echo "- Retrieve of the iso file in progress..."
-_wget MD5SUMS
+_wget ${CDRepo} MD5SUMS
 
 Search=$(grep ${IsoMsk} MD5SUMS)
 IsoMd5s=$(echo ${Search} | awk '{print $1}')
 IsoFile=$(echo ${Search} | awk '{print $2}')
 
-_wget ${IsoFile}
+_wget ${CDRepo} ${IsoFile}
 _log "The md5sum is: ${IsoMd5s}"
 
 if [ $(md5sum ${IsoFile} | awk '{print $1}') != ${IsoMd5s} ] ; then
