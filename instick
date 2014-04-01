@@ -1,0 +1,177 @@
+#!/bin/bash
+# Preparing a USB stick with a Debian installer and all the needed stuff
+#
+# Version 0.4
+# OLOC - 27/03/2014
+###################
+
+DevUsb=/dev/sdb
+Arch=i386
+CDRepo=http://cdimage.debian.org/debian-cd/current/${Arch}/iso-cd
+IsoMsk=${Arch}-CD-1.iso 
+
+Name=$(basename $0)
+LogDir=/var/log
+LogFile=${LogDir}/${Name}.$(date +%Y%m%d).$(date +%H%M%S).log
+TmpDir=/tmp/${Name}
+
+###################
+# Functions
+_echo() {
+        echo "$(date +%Y%m%d-%H%M%S) - $1" | tee -a ${LogFile}
+}
+
+_end() {
+        RC=$1
+        if [ ${RC} -ne 0 ] ; then
+                _echo "[ERROR] The process is stopped [Return Code=${RC}]. See the log: ${LogFile}"
+                exit ${RC}
+        fi
+}
+
+_log() {
+        echo "$(date +%Y%m%d-%H%M%S) * $1" >> ${LogFile}
+}
+
+_wget() {
+	Url=$1/$2
+	cd ${TmpDir}
+        wget -c ${Url} | tee -a ${LogFile}.tmp
+        wget_RC=$?
+        grep -v '%' ${LogFile}.tmp | tee -a ${LogFile}
+        rm  ${LogFile}.tmp 2>/dev/null
+        _end ${wget_RC}
+
+	# Check of the quality of the recieved iso file
+	if [ ! -r ${TmpDir}/$2 ] ; then
+        	_echo "- Cannot read the retrieved file $2."
+        	_end 42
+	fi
+}
+
+
+###################
+# Start annoucement
+_log "${Name} - start."
+_log "Log is here: ${LogFile}"
+
+
+###################
+# Menu - Plug
+while true
+do
+        clear
+        echo "Please plug your USB stick and answer:"
+        echo -e "\t1. The stick is ready."
+        echo -e "\t2. I want to exit."
+        echo -n "Enter your choice: "
+        read PlugAnswer
+        case "${PlugAnswer}" in
+                1) break ;;
+                2) exit;;
+                *)  ;;
+        esac
+done
+
+###################
+# Checks of the USB device
+SerialNumber=$(dmesg | grep 'SerialNumber' | tail -1 | awk '{print $NF}')
+DevUsb1=$(ls -l /dev/disk/by-id | grep ${SerialNumber} | awk -F'../../' '{print $2}')
+DevUsb2=$(dmesg | grep -i 'removable disk' | tail -1 | cut -c16- | awk '{print $3}' | tr -d '[]')
+
+_log "Serial Number = ${SerialNumber}"
+_log "DevUsb by SN in by-id = ${DevUsb1}"
+_log "DevUsb by removable disk = ${DevUsb2}"
+
+if [ -z ${DevUsb1} ] ; then
+	_echo "[ERROR] The usb device seems to be unknown."
+	_end 42
+fi
+if [[ "${DevUsb1}" == "${DevUsb2}" ]] ; then
+	DevUsb=${DevUsb1}
+else
+	_echo "[WARNING] Confusing usb devices: ${DevUsb1} and ${DevUsb2}"
+	_echo "Default usb device is: ${DevUsb}"
+fi
+
+_echo   "The USB stick to use is : [${DevUsb}]"
+echo -n "Press enter to use the default value, Q to quit or answer: "
+read StickAnswer
+if [[ $(echo ${StickAnswer} | tr [:lower:] [:upper:]) == 'Q' ]] ; then
+	_log "The user quits."
+	exit
+fi
+if [ ! -z ${StickAnswer} ] ; then
+        DevUsb=${StickAnswer}
+fi
+_echo "The USB stick to use is : ${DevUsb}"
+
+###################
+# Distribution choice
+echo -e "\r"
+while true
+do
+        clear
+        echo "Distributions: "
+        echo -e "\t1. The default one"
+        echo -e "\t2. kde"
+        echo -e "\t3. lxde"
+        echo -e "\t4. netinst"
+        echo -e "\t5. xfce"
+	echo -e "\tq. I change my mind and I want to quit\r"
+        echo -n "Enter your choice: "
+        read PlugAnswer
+        case "${PlugAnswer}" in
+		q*|Q*) _log "The user quits" ; exit;;
+		2) IsoMsk=${Arch}-CD-1.iso      ; break ;;
+		2) IsoMsk=${Arch}-kde-CD-1.iso  ; break ;;
+		5) IsoMsk=${Arch}-lxde-CD-1.iso ; break ;;
+		4) IsoMsk=${Arch}-netinst.iso   ; break ;;
+		5) IsoMsk=${Arch}-xfce-CD-1.iso ; break ;;
+                *) ;;
+	esac
+done
+_log "Distribution choice: ${IsoMsk}"
+
+###################
+# Preparation of the temporary items
+rm -Rf ${TmpDir} ${MntDir} 2>/dev/null
+mkdir -p ${TmpDir} ${MntDir}
+CurDir=$(pwd)
+cd ${TmpDir}
+
+###################
+# Retrieve 
+_echo "- Retrieve of the iso file in progress..."
+_wget MD5SUMS
+
+Search=$(grep ${IsoMsk} MD5SUMS)
+IsoMd5s=$(echo ${Search} | awk '{print $1}')
+IsoFile=$(echo ${Search} | awk '{print $2}')
+
+_wget ${IsoFile}
+_log "The md5sum is: ${IsoMd5s}"
+
+if [ $(md5sum ${IsoFile} | awk '{print $1}') != ${IsoMd5s} ] ; then
+	_echo "[ERROR] The md5 sum is not check."
+	_end 42
+fi
+_echo "Retrieved iso file is: ${IsoFile}"
+
+###################
+_echo "- The preparation of ${DevUsb} is in progress..."
+#cp -v ${TmpDir}/${IsoFile} ${DevUsb} ; sync
+#dd if=${TmpDir}/${IsoFile} of=${DevUsb} bs=4M ; sync
+_echo "- The preparation of ${DevUsb} is done."
+
+###################
+# Clean up
+_echo "Clean-up in progress..."
+cd ${CurDir}
+rm -Rf ${TmpDir} 2>/dev/null
+_log "Clean-up done."
+
+###################
+# End annoucement
+_echo "Stick preparation done. All details in ${LogFile} ."
+_log "${Name} - end."
