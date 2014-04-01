@@ -1,0 +1,97 @@
+#! /bin/sh
+# Embedded rsync
+# 
+# Version 0.4
+# OLOC - 26/07/2013 
+
+# Constante Directories Variables
+CfgDir=/home/rsync
+LogDir=/var/log/rsync
+PidDir=/var/run/rsync
+# Remove the extra logs
+MoreThan=7
+
+# Name to use
+Name=$(basename $0)
+case $# in
+	0) Name=${Name} ;;
+	1) Name=$1 ;;
+	*) 
+		echo "Usage: ${Name} [List File]" 
+		exit 0
+	;;
+esac
+
+# Files names
+CfgFile=${CfgDir}/${Name}.conf
+LogFile=${LogDir}/${Name}.$(date +%Y%m%d).$(date +%H%M%S).log
+PidFile=${PidDir}/${Name}.pid
+LstFile=${Name}.lst
+
+# Options
+#Options="--archive --recursive --verbose --delete --dry-run"
+Options="--archive --recursive --verbose --delete"
+LogOpt="--log-file=${LogFile}"
+FrmOpt="--files-from=${CfgDir}/${LstFile}"
+
+# Functions
+_echo() {
+	echo "$(date +%Y%m%d-%H%M%S) : $1" | tee -a ${LogFile}
+}
+
+_end() {
+	_echo "Current process stoped."
+	if [ X"$1" = Xrm ] ; then
+		rm ${PidFile} > /dev/null
+	fi
+	exit 0
+}
+	
+
+# Creation of the log file
+touch ${LogFile}
+
+# Start annoucement
+_echo "$0 - start."
+_echo "Log is here: ${LogFile}"
+
+# Check if a previous backup is still running
+if [ -s ${PidFile} ] ; then
+	_echo "Previous process ($(cat ${PidFile})) is still running."
+	_end
+else
+	echo $$ > ${PidFile}
+fi
+
+# Check if there is a list file
+if [ ! -s ${LstFile} ] ; then
+	_echo "Missing or empty list file ${LstFile}"
+	_end rm
+fi
+
+# Configuration files
+_echo "Load ${CfgFile}"
+if [ ! -s ${CfgFile} ] ; then
+	_echo "Missing or empty config file ${CfgFile}"
+	_end rm
+else
+	. ${CfgFile}
+fi
+
+# Other annoucements
+_echo "Options=${Options}"
+_echo "From file=${FrmOpt}"
+_echo "rsync in progress..." 
+
+rsync ${Options} ${LogOpt} ${FrmOpt} -e "ssh -i ${Key}" ${Src} ${User}@${Server}:${Dst}
+
+rm ${PidFile} > /dev/null
+
+# Remove of the extra logs
+_echo "Remove of the extra logs (more than ${MoreThan}) in progress..."
+ls -1t ${LogDir}/* | tail -n +${MoreThan} | xargs rm -r | tee -a ${LogFile}
+_echo "Remove of the extra logs (more than ${MoreThan}) done."
+
+# End annoucement
+_echo "rsync done. All details in ${LogFile} ."
+_echo "$0 - end."
