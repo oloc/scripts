@@ -1,8 +1,8 @@
 #!/bin/bash
 # Preparing a USB stick with a Debian installer and all the needed stuff
 #
-# Version 0.4
-# OLOC - 27/03/2014
+# Version 0.5 - OLOC - 04/04/2014 - add retry option 
+# Version 0.4 - OLOC - 27/03/2014
 ###################
 
 DevUsb=/dev/sdb
@@ -57,6 +57,17 @@ _log "Log is here: ${LogFile}"
 
 
 ###################
+# Argument management
+
+while getopts "r" Option
+do
+	case ${Option} in
+		r|R) typeset -i Retry=1 ;;
+	esac
+done
+shift $(($OPTIND - 1))
+
+###################
 # Menu - Plug
 while true
 do
@@ -94,8 +105,8 @@ else
 	_echo "Default usb device is: ${DevUsb}"
 fi
 
-_echo   "The USB stick to use is : [${DevUsb}]"
-echo -n "Press enter to use the default value, Q to quit or answer: "
+_echo   "The detected USB stick is : [${DevUsb}]"
+echo -n "Press enter to use it, Q to quit or name it: "
 read StickAnswer
 if [[ $(echo ${StickAnswer} | tr [:lower:] [:upper:]) == 'Q' ]] ; then
 	_log "The user quits."
@@ -111,7 +122,6 @@ _echo "The USB stick to use is : ${DevUsb}"
 echo -e "\r"
 while true
 do
-        clear
         echo "Distributions: "
         echo -e "\t1. The default one"
         echo -e "\t2. kde"
@@ -135,7 +145,7 @@ _log "Distribution choice: ${IsoMsk}"
 
 ###################
 # Preparation of the temporary items
-rm -Rf ${TmpDir} ${MntDir} 2>/dev/null
+[ ! ${Retry} ] && rm -Rf ${TmpDir} ${MntDir} 2>/dev/null
 mkdir -p ${TmpDir} ${MntDir}
 CurDir=$(pwd)
 cd ${TmpDir}
@@ -152,6 +162,7 @@ IsoFile=$(echo ${Search} | awk '{print $2}')
 _wget ${CDRepo} ${IsoFile}
 _log "The md5sum is: ${IsoMd5s}"
 
+_echo "Cheking md5 sum in progress..."
 if [ $(md5sum ${IsoFile} | awk '{print $1}') != ${IsoMd5s} ] ; then
 	_echo "[ERROR] The md5 sum is not check."
 	_end 42
@@ -160,15 +171,15 @@ _echo "Retrieved iso file is: ${IsoFile}"
 
 ###################
 _echo "The preparation of ${DevUsb} is in progress..."
-#cp -v ${TmpDir}/${IsoFile} ${DevUsb} ; sync
-dd if=${TmpDir}/${IsoFile} of=${DevUsb} bs=4M ; sync
+_log "dd if=${TmpDir}/${IsoFile} of=/dev/${DevUsb} bs=4M"
+      dd if=${TmpDir}/${IsoFile} of=/dev/${DevUsb} bs=4M ; sync
 _echo "The preparation of ${DevUsb} is done."
 
 ###################
 # Clean up
 _echo "Clean-up in progress..."
 cd ${CurDir}
-rm -Rf ${TmpDir} 2>/dev/null
+#rm -Rf ${TmpDir} 2>/dev/null
 _log "Clean-up done."
 
 ###################
