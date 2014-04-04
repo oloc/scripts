@@ -5,7 +5,7 @@
 # Version 0.4 - OLOC - 27/03/2014
 ###################
 
-DevUsb=/dev/sdb
+DevUsb=sdb
 Arch=i386
 CDRepo=http://cdimage.debian.org/debian-cd/current/${Arch}/iso-cd
 IsoMsk=${Arch}-CD-1.iso 
