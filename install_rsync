@@ -1,4 +1,3 @@
-#! /bin/sh
 # Embedded rsync installation
 # 
 # Version 0.2
@@ -9,6 +8,8 @@ LogDir=/var/log
 LogFile=${LogDir}/$(basename $0).$(date +%Y%m%d).$(date +%H%M%S).log
 RunDir=/run
 TmpDir=/tmp/${Name}
+HomeDir=/home/${Name}
+SshDir=${HomeDir}/.ssh
 
 ###################
 # Functions
@@ -23,17 +24,21 @@ _log() {
 _log "${Name} - start."
 _echo "Account creation in progress..."
 useradd -m -s /bin/false ${Name}
-_echo "Log and Run directories creation in progress..."
+_echo "Directories creation in progress..."
 mkdir -p ${LogDir}/${Name}
 chown ${Name}:${Name} ${LogDir}/${Name}
 mkdir -p ${RunDir}/${Name}
 chown ${Name}:${Name} ${RunDir}/${Name}
+mkdir -p ${SshDir}
+chown ${Name}:${Name} ${SshDir}
+chmod 600 ${SshDir}
 
 _echo "Script retrieve in progress..."
-cd ~${Name}
+CurDir=$(pwd)
+cd ${HomeDir}
 wget -c http://olivierlocard.com/share/scripts/backup
-chmod 750 ~${Name}/backup
-chown ${Name}:${Name} ~${Name}/backup
+chmod 750 ${HomeDir}/backup
+chown ${Name}:${Name} ${HomeDir}/backup
 
 _echo "Remote configuration in progress..."
 echo -n "Remote Server:"
@@ -41,17 +46,20 @@ read RmtServer
 echo -n "Remote User:"
 read RmtUser
 
-CfgFile=~${Name}/backup.lst
-Key=~${Name}/.ssh/${Name}-key
+CfgFile=${HomeDir}/backup.lst
+Key=${Name}-key
 
 _echo "Configuration file creation in progress..."
 echo "User=${RmtUser}" >> ${CfgFile}
 echo "Server=${RmtServer}" >> ${CfgFile}
-echo "Key=${Key}" >> ${CfgFile}
+echo "Key=${SshDir}/${Key}" >> ${CfgFile}
 
 _echo "SSH Key generation in progress..."
-ssh-keygen -t rsa -b 2048 -f ${Key} -C ${Name}@$(cat /etc/hostname)
-scp ${Key}.pub ${RmtUser}@${RmtServer}:.ssh
-ssh ${RmtUser}@${RmtServer} "cat ./.ssh/${Key}.pub >> ./.ssh/authorized_keys; chmod 600 ./.ssh/authrized_keys"
+ssh-keygen -t rsa -b 2048 -f ${SshDir}/${Key} -C ${Name}@$(cat /etc/hostname)
+_echo "Sending ${Key}.pub to ${RmtUser}@${RmtServer}..."
+scp ${SshDir}/${Key}.pub ${RmtUser}@${RmtServer}:.ssh
+_echo "Remote integration..."
+ssh ${RmtUser}@${RmtServer} "cat ./.ssh/${Key}.pub >> ./.ssh/authorized_keys && chmod 600 ./.ssh/authorized_keys && rm ./.ssh/${Key}.pub"
 
+cd ${CurDir}
 _log "${Name} - End."
