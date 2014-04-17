@@ -1,7 +1,7 @@
 #! /bin/sh
 # Embedded rsync installation
 # 
-# Version 0.4
+# Version 0.2
 # OLOC - 26/07/2013 
 
 Name=rsync
@@ -35,9 +35,23 @@ wget -c http://olivierlocard.com/share/scripts/backup
 chmod 750 ~${Name}/backup
 chown ${Name}:${Name} ~${Name}/backup
 
-_echo "SSH Key generation in progress..."
+_echo "Remote configuration in progress..."
+echo -n "Remote Server:"
+read RmtServer
+echo -n "Remote User:"
+read RmtUser
+
+CfgFile=~${Name}/backup.lst
 Key=~${Name}/.ssh/${Name}-key
+
+_echo "Configuration file creation in progress..."
+echo "User=${RmtUser}" >> ${CfgFile}
+echo "Server=${RmtServer}" >> ${CfgFile}
+echo "Key=${Key}" >> ${CfgFile}
+
+_echo "SSH Key generation in progress..."
 ssh-keygen -t rsa -b 2048 -f ${Key} -C ${Name}@$(cat /etc/hostname)
-#scp ${Key}.pub 
+scp ${Key}.pub ${RmtUser}@${RmtServer}:.ssh
+ssh ${RmtUser}@${RmtServer} "cat ./.ssh/${Key}.pub >> ./.ssh/authorized_keys; chmod 600 ./.ssh/authrized_keys"
 
 _log "${Name} - End."
