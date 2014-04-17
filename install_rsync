@@ -1,0 +1,43 @@
+#! /bin/sh
+# Embedded rsync installation
+# 
+# Version 0.4
+# OLOC - 26/07/2013 
+
+Name=rsync
+LogDir=/var/log
+LogFile=${LogDir}/$(basename $0).$(date +%Y%m%d).$(date +%H%M%S).log
+RunDir=/run
+TmpDir=/tmp/${Name}
+
+###################
+# Functions
+_echo() {
+        echo "$(date +%Y%m%d-%H%M%S) - $1" | tee -a ${LogFile}
+}
+
+_log() {
+        echo "$(date +%Y%m%d-%H%M%S) * $1" >> ${LogFile}
+}
+
+_log "${Name} - start."
+_echo "Account creation in progress..."
+useradd -m -s /bin/false ${Name}
+_echo "Log and Run directories creation in progress..."
+mkdir -p ${LogDir}/${Name}
+chown ${Name}:${Name} ${LogDir}/${Name}
+mkdir -p ${RunDir}/${Name}
+chown ${Name}:${Name} ${RunDir}/${Name}
+
+_echo "Script retrieve in progress..."
+cd ~${Name}
+wget -c http://olivierlocard.com/share/scripts/backup
+chmod 750 ~${Name}/backup
+chown ${Name}:${Name} ~${Name}/backup
+
+_echo "SSH Key generation in progress..."
+Key=~${Name}/.ssh/${Name}-key
+ssh-keygen -t rsa -b 2048 -f ${Key} -C ${Name}@$(cat /etc/hostname)
+#scp ${Key}.pub 
+
+_log "${Name} - End."
