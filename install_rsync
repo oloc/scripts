@@ -46,7 +46,7 @@ read RmtServer
 echo -n "Remote User:"
 read RmtUser
 
-CfgFile=${HomeDir}/backup.lst
+CfgFile=${HomeDir}/backup.conf
 Key=${Name}-key
 
 _echo "Configuration file creation in progress..."
@@ -56,6 +56,8 @@ echo "Key=${SshDir}/${Key}" >> ${CfgFile}
 
 _echo "SSH Key generation in progress..."
 ssh-keygen -t rsa -b 2048 -f ${SshDir}/${Key} -C ${Name}@$(cat /etc/hostname)
+chmod 600 ${SshDir}/${Key}*
+chown ${Name}:${Name} ${SshDir}/${Key}*
 _echo "Sending ${Key}.pub to ${RmtUser}@${RmtServer}..."
 scp ${SshDir}/${Key}.pub ${RmtUser}@${RmtServer}:.ssh
 _echo "Remote integration..."
