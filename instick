@@ -1,19 +1,22 @@
 #!/bin/bash
 # Preparing a USB stick with a Debian installer and all the needed stuff
 #
+# Version 0.7 - OLOC - 26/04/2014 - Local Repository
+# Version 0.6 - OLOC - 04/04/2014 - _wget simplification 
 # Version 0.5 - OLOC - 04/04/2014 - add retry option 
 # Version 0.4 - OLOC - 27/03/2014
 ###################
 
 DevUsb=sdb
 Arch=i386
-CDRepo=http://cdimage.debian.org/debian-cd/current/${Arch}/iso-cd
+Src=iso-cd
+CDRepo=http://cdimage.debian.org/debian-cd/current/${Arch}/${Src}
 IsoMsk=${Arch}-CD-1.iso 
 
 Name=$(basename $0)
 LogDir=/var/log
 LogFile=${LogDir}/${Name}.$(date +%Y%m%d).$(date +%H%M%S).log
-TmpDir=/tmp/${Name}
+LclRpt=$HOME/.${Name}/${Src}
 
 ###################
 # Functions
@@ -35,15 +38,12 @@ _log() {
 
 _wget() {
 	Url=$1/$2
-	cd ${TmpDir}
-        wget -c ${Url} | tee -a ${LogFile}.tmp
-        wget_RC=$?
-        grep -v '%' ${LogFile}.tmp | tee -a ${LogFile}
-        rm  ${LogFile}.tmp 2>/dev/null
-        _end ${wget_RC}
+	cd ${LclRpt}
+        wget -c ${Url}
+	_end $?
 
 	# Check of the quality of the recieved iso file
-	if [ ! -r ${TmpDir}/$2 ] ; then
+	if [ ! -r ${LclRpt}/$2 ] ; then
         	_echo "- Cannot read the retrieved file $2."
         	_end 42
 	fi
@@ -59,10 +59,11 @@ _log "Log is here: ${LogFile}"
 ###################
 # Argument management
 
-while getopts "r" Option
+while getopts "cr" Option
 do
 	case ${Option} in
 		r|R) typeset -i Retry=1 ;;
+		c|C) typeset -i Clear=1 ;;
 	esac
 done
 shift $(($OPTIND - 1))
@@ -144,11 +145,11 @@ done
 _log "Distribution choice: ${IsoMsk}"
 
 ###################
-# Preparation of the temporary items
-[ ! ${Retry} ] && rm -Rf ${TmpDir} ${MntDir} 2>/dev/null
-mkdir -p ${TmpDir} ${MntDir}
+# Preparation of the Local Repository
+[ ${Clear} ] && rm -Rf ${LclRpt} 2>/dev/null
+mkdir -p ${LclRpt} 2>/dev/null
 CurDir=$(pwd)
-cd ${TmpDir}
+cd ${LclRpt}
 
 ###################
 # Retrieve 
@@ -159,6 +160,8 @@ Search=$(grep ${IsoMsk} MD5SUMS)
 IsoMd5s=$(echo ${Search} | awk '{print $1}')
 IsoFile=$(echo ${Search} | awk '{print $2}')
 
+_log "$(ls -l ${LclRpt}/${IsoFile})"
+[ ! ${Retry} ] && rm -f ${LclRpt}/${IsoFile} 2>/dev/null
 _wget ${CDRepo} ${IsoFile}
 _log "The md5sum is: ${IsoMd5s}"
 
@@ -171,15 +174,15 @@ _echo "Retrieved iso file is: ${IsoFile}"
 
 ###################
 _echo "The preparation of ${DevUsb} is in progress..."
-_log "dd if=${TmpDir}/${IsoFile} of=/dev/${DevUsb} bs=4M"
-      dd if=${TmpDir}/${IsoFile} of=/dev/${DevUsb} bs=4M ; sync
+_log "dd if=${LclRpt}/${IsoFile} of=/dev/${DevUsb} bs=4M"
+      dd if=${LclRpt}/${IsoFile} of=/dev/${DevUsb} bs=4M ; sync
 _echo "The preparation of ${DevUsb} is done."
 
 ###################
 # Clean up
 _echo "Clean-up in progress..."
 cd ${CurDir}
-#rm -Rf ${TmpDir} 2>/dev/null
+rm -f ${LclRpt}/MD5SUMS 2>/dev/null
 _log "Clean-up done."
 
 ###################
