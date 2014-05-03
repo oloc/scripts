@@ -148,7 +148,11 @@ _log "Distribution choice: ${IsoMsk}"
 
 ###################
 # Preparation of the Local Repository
-[ ${Clear} ] && rm -Rf ${LclRpt} 2>/dev/null
+if [ ${Clear} ] ; then
+	_echo "Clearing the local repository ${LclRpt}..."
+	_log "rm -Rf ${LclRpt} 2>/dev/null"
+	      rm -Rf ${LclRpt} 2>/dev/null
+fi
 mkdir -p ${LclRpt} 2>/dev/null
 CurDir=$(pwd)
 cd ${LclRpt}
@@ -163,7 +167,10 @@ IsoMd5s=$(echo ${Search} | awk '{print $1}')
 IsoFile=$(echo ${Search} | awk '{print $2}')
 
 _log "$(ls -l ${LclRpt}/${IsoFile})"
-[ ! ${Retry} ] && rm -f ${LclRpt}/${IsoFile} 2>/dev/null
+if [ ! ${Retry} ] ; then
+	_log "rm -f ${LclRpt}/${IsoFile} 2>/dev/null"
+	      rm -f ${LclRpt}/${IsoFile} 2>/dev/null
+fi
 _wget ${CDRepo} ${IsoFile}
 _log "The md5sum is: ${IsoMd5s}"
 
