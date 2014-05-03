@@ -16,7 +16,7 @@ IsoMsk=${Arch}-CD-1.iso
 Name=$(basename $0)
 LogDir=/var/log
 LogFile=${LogDir}/${Name}.$(date +%Y%m%d).$(date +%H%M%S).log
-LclRpt=$HOME/.${Name}/${Src}
+LclRpt=/usr/share/${Name}/${Src}
 
 ###################
 # Functions
@@ -54,6 +54,8 @@ _wget() {
 # Start annoucement
 _log "${Name} - start."
 _log "Log is here: ${LogFile}"
+_log "Local Repository is here: ${LclRpt}"
+_log "Debug - user=$USER - home=$HOME"
 
 
 ###################
@@ -174,8 +176,11 @@ _echo "Retrieved iso file is: ${IsoFile}"
 
 ###################
 _echo "The preparation of ${DevUsb} is in progress..."
+_log "mkfs /dev/${DevUsb}"
+      mkfs /dev/${DevUsb}
 _log "dd if=${LclRpt}/${IsoFile} of=/dev/${DevUsb} bs=4M"
-      dd if=${LclRpt}/${IsoFile} of=/dev/${DevUsb} bs=4M ; sync
+      #dd if=${LclRpt}/${IsoFile} of=/dev/${DevUsb} bs=4M ; sync
+      dd if=${LclRpt}/${IsoFile} of=/dev/${DevUsb} ; sync
 _echo "The preparation of ${DevUsb} is done."
 
 ###################
