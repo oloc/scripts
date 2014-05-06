@@ -1,6 +1,7 @@
 #!/bin/bash
 # Preparing a USB stick with a Debian installer and all the needed stuff
 #
+# Version 0.7.1 - kiyop - 06/05/2014 - convert mkfs into "dd if=/dev/zero bs=512 count=1 of=..."
 # Version 0.7 - OLOC - 26/04/2014 - Local Repository
 # Version 0.6 - OLOC - 04/04/2014 - _wget simplification 
 # Version 0.5 - OLOC - 04/04/2014 - add retry option 
@@ -183,10 +184,11 @@ _echo "Retrieved iso file is: ${IsoFile}"
 
 ###################
 _echo "The preparation of ${DevUsb} is in progress..."
-_log "mkfs /dev/${DevUsb}"
-      mkfs /dev/${DevUsb}
-_log "dd if=${LclRpt}/${IsoFile} of=/dev/${DevUsb} bs=4M"
-      #dd if=${LclRpt}/${IsoFile} of=/dev/${DevUsb} bs=4M ; sync
+# kiyop - _log "mkfs /dev/${DevUsb}"
+# kiyop -      mkfs /dev/${DevUsb}
+_log "dd if=/dev/zero bs=512 count=1 of=/dev/${DevUsb}"
+      dd if=/dev/zero bs=512 count=1 of=/dev/${DevUsb}
+_log "dd if=${LclRpt}/${IsoFile} of=/dev/${DevUsb}"
       dd if=${LclRpt}/${IsoFile} of=/dev/${DevUsb} ; sync
 _echo "The preparation of ${DevUsb} is done."
 
