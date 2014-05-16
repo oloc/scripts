@@ -1,26 +1,21 @@
-# Je sais c'est bien goret, mais c'est plus une prise de notes qu'un script
+#
+# 16/05/2014 - oloc - first format
 
+Name=$(basename $0)
+LogDir=/var/log
+LogFile=${LogDir}/${Name}.$(date +%Y%m%d).$(date +%H%M%S).log
+
+###################
+# Functions
+_echo() {
+        echo "$(date +%Y%m%d-%H%M%S) - $1" | tee -a ${LogFile}
+}
 
 echo 'deb http://archive.mene.za.net/raspbian wheezy contrib' >> /etc/apt/sources.list.d/mene.list
 apt-key adv --keyserver keyserver.ubuntu.com --recv-key 5243CDED
 
 apt-get update
 apt-get install xbmc
-
-cd /etc/init.d
-mv xbmc xbmc.bkp
-wget http://olivierlocard.com/share/scripts/xbmc
-chmod 755 xbmc
-
-mkdir -p /etc/xbmc
-CfgFile=/etc/xbmc/xbmc.cfg
-echo '# Set this to 1 to enable startup' > ${CfgFile}
-echo 'ENABLED=1' >> ${CfgFile}
-echo '# The user to run XBMC as' >> ${CfgFile}
-echo 'USER=xbmc' >> ${CfgFile}
-echo '# Adjust niceness of XBMC (decrease for higher priority)' >> ${CfgFile}
-echo 'NICE=0' >> ${CfgFile}
-echo 'echo "Enable=$ENABLED User=$USER Nice=$NICE Pid=$(cat $PIDFILE)" >> ${CfgFile}
 
 _echo "Account creation in progress..."
 useradd -m -s /bin/false xbmc
@@ -30,6 +25,23 @@ adduser xbmc audio
 adduser xbmc video
 adduser xbmc dialout
 adduser xbmc plugdev
+
+_echo "Update of the /etc/init.d/xbmc"
+cd /etc/init.d
+mv xbmc xbmc.bkp
+wget http://olivierlocard.com/share/scripts/xbmc
+chmod 755 xbmc
+
+_echo "Creation of the /etc/xbmc/xbmc.cfg"
+mkdir -p /etc/xbmc
+CfgFile=/etc/xbmc/xbmc.cfg
+echo '# Set this to 1 to enable startup' > ${CfgFile}
+echo 'ENABLED=1' >> ${CfgFile}
+echo '# The user to run XBMC as' >> ${CfgFile}
+echo 'USER=xbmc' >> ${CfgFile}
+echo '# Adjust niceness of XBMC (decrease for higher priority)' >> ${CfgFile}
+echo 'NICE=0' >> ${CfgFile}
+echo 'echo "Enable=$ENABLED User=$USER Nice=$NICE Pid=$(cat $PIDFILE)"' >> ${CfgFile}
 
 _echo "Rules management in progress..."
 RulesFile=/etc/udev/rules.d/99-input.rules
