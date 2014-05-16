@@ -1,4 +1,4 @@
-
+# Je sais c'est bien goret, mais c'est plus une prise de notes qu'un script
 
 
 echo 'deb http://archive.mene.za.net/raspbian wheezy contrib' >> /etc/apt/sources.list.d/mene.list
@@ -39,18 +39,3 @@ _echo "Location management in progress..."
 cp -Rf $HOME/.xbmc ~xbmc/.xbmc
 chown -R xbmc:xbmc ~xbmc/.xbmc
 ln -s /home/xbmc/.xbmc/temp/xbmc.log /var/log/xbmc.log
-
-
-A
-A
-A
-A
-A
-A
-A
-A
-A
-A
-A
-A
-
