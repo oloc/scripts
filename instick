@@ -1,6 +1,7 @@
 #!/bin/bash
 # Preparing a USB stick with a Debian installer and all the needed stuff
 #
+# Version 0.7.2 - OLOC - 19/05/2014 - Minor modifications
 # Version 0.7.1 - kiyop - 06/05/2014 - convert mkfs into "dd if=/dev/zero bs=512 count=1 of=..."
 # Version 0.7 - OLOC - 26/04/2014 - Local Repository
 # Version 0.6 - OLOC - 04/04/2014 - _wget simplification 
@@ -12,7 +13,6 @@ DevUsb=sdb
 Arch=i386
 Src=iso-cd
 CDRepo=http://cdimage.debian.org/debian-cd/current/${Arch}/${Src}
-IsoMsk=${Arch}-CD-1.iso 
 
 Name=$(basename $0)
 LogDir=/var/log
@@ -54,9 +54,9 @@ _wget() {
 ###################
 # Start annoucement
 _log "${Name} - start."
-_log "Log is here: ${LogFile}"
-_log "Local Repository is here: ${LclRpt}"
-_log "Debug - user=$USER - home=$HOME"
+_log "Log is here:                ${LogFile}"
+_log "Remote Reppository is here: http://cdimage.debian.org/debian-cd/current/${Arch}/${Src}" 
+_log "Local Repository is here:   ${LclRpt}"
 
 
 ###################
@@ -184,8 +184,8 @@ _echo "Retrieved iso file is: ${IsoFile}"
 
 ###################
 _echo "The preparation of ${DevUsb} is in progress..."
-#Â kiyop - _log "mkfs /dev/${DevUsb}"
-# kiyop -      mkfs /dev/${DevUsb}
+# kiyop - _log "mkfs /dev/${DevUsb}"
+# kiyop -       mkfs /dev/${DevUsb}
 _log "dd if=/dev/zero bs=512 count=1 of=/dev/${DevUsb}"
       dd if=/dev/zero bs=512 count=1 of=/dev/${DevUsb}
 _log "dd if=${LclRpt}/${IsoFile} of=/dev/${DevUsb}"

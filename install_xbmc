@@ -2,6 +2,8 @@
 # 16/05/2014 - oloc - first format
 
 Name=$(basename $0)
+App=xbmc
+User=${App}
 LogDir=/var/log
 LogFile=${LogDir}/${Name}.$(date +%Y%m%d.%H%M%S).log
 
@@ -11,35 +13,35 @@ _echo() {
         echo "$(date +%Y%m%d-%H%M%S) - $1" | tee -a ${LogFile}
 }
 
+_echo "Account creation in progress..."
+useradd -m -s /bin/false ${User}
+addgroup input --system
+adduser ${User} input
+adduser ${User} audio
+adduser ${User} video
+adduser ${User} dialout
+adduser ${User} plugdev
+
 echo 'deb http://archive.mene.za.net/raspbian wheezy contrib' >> /etc/apt/sources.list.d/mene.list
 apt-key adv --keyserver keyserver.ubuntu.com --recv-key 5243CDED
 
 apt-get update
-apt-get install xbmc
+apt-get install ${App}
 
-_echo "Account creation in progress..."
-useradd -m -s /bin/false xbmc
-addgroup input --system
-adduser xbmc input
-adduser xbmc audio
-adduser xbmc video
-adduser xbmc dialout
-adduser xbmc plugdev
-
-_echo "Update of the /etc/init.d/xbmc"
+_echo "Update of the /etc/init.d/${App}"
 cd /etc/init.d
-mv xbmc xbmc.bkp
-wget http://olivierlocard.com/share/scripts/xbmc
-chmod 755 xbmc
+mv ${App} ${App}.bkp
+wget http://olivierlocard.com/share/scripts/${App}
+chmod 755 ${App}
 
-_echo "Creation of the /etc/xbmc/xbmc.cfg"
-mkdir -p /etc/xbmc
-CfgFile=/etc/xbmc/xbmc.cfg
+CfgFile=/etc/${App}/${App}.cfg
+_echo "Creation of the ${CfgFile}"
+mkdir -p /etc/${App}
 echo '# Set this to 1 to enable startup' > ${CfgFile}
 echo 'ENABLED=1' >> ${CfgFile}
-echo '# The user to run XBMC as' >> ${CfgFile}
-echo 'USER=xbmc' >> ${CfgFile}
-echo '# Adjust niceness of XBMC (decrease for higher priority)' >> ${CfgFile}
+echo '# The user to run ${App} as' >> ${CfgFile}
+echo 'USER=${User}' >> ${CfgFile}
+echo '# Adjust niceness of ${App} (decrease for higher priority)' >> ${CfgFile}
 echo 'NICE=0' >> ${CfgFile}
 echo 'echo "Enable=$ENABLED User=$USER Nice=$NICE Pid=$(cat $PIDFILE)"' >> ${CfgFile}
 
@@ -48,6 +50,6 @@ RulesFile=/etc/udev/rules.d/99-input.rules
 echo 'SUBSYSTEM=="input", GROUP="input", MODE="0660"' > ${RulesFile}
 
 _echo "Location management in progress..."
-cp -Rf $HOME/.xbmc ~xbmc/.xbmc
-chown -R xbmc:xbmc ~xbmc/.xbmc
-ln -s /home/xbmc/.xbmc/temp/xbmc.log /var/log/xbmc.log
+cp -Rf $HOME/.${App} $HOME/../${User}/.${App}
+chown -R ${User}:${User} $HOME/../${User}/.${App}
+ln -s $HOME/../${User}/.${App}/temp/${App}.log ${LogDir}/${App}.log
