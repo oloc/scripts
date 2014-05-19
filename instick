@@ -16,7 +16,7 @@ IsoMsk=${Arch}-CD-1.iso
 
 Name=$(basename $0)
 LogDir=/var/log
-LogFile=${LogDir}/${Name}.$(date +%Y%m%d).$(date +%H%M%S).log
+LogFile=${LogDir}/${Name}.$(date +%Y%m%d.%H%M%S).log
 LclRpt=/usr/share/${Name}/${Src}
 
 ###################

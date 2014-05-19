@@ -5,7 +5,7 @@
 
 Name=rsync
 LogDir=/var/log
-LogFile=${LogDir}/$(basename $0).$(date +%Y%m%d).$(date +%H%M%S).log
+LogFile=${LogDir}/$(basename $0).$(date +%Y%m%d.%H%M%S).log
 RunDir=/run
 TmpDir=/tmp/${Name}
 HomeDir=/home/${Name}
