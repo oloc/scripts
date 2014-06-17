@@ -1,5 +1,8 @@
 # Install_gitlab - GitLab Installation Helper
 # Prepare all the stuff excepted the configuration files
+# 1. Launch the script
+# 2. Modify the configuration files as suggested
+# 3. Launch again the script
 #
 # 13/06/2014 - oloc - First version
 
@@ -136,5 +139,5 @@ sudo -u ${User} -H bundle exec rake gitlab:check RAILS_ENV=production
 _echo "On your web browser try the login : admin@local.host and password : 5iveL!fe"
 _echo "****************************************************************************"
 
-fi
 sudo rm /tmp/${Name}.flag 2>/dev/null
+fi
