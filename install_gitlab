@@ -57,7 +57,8 @@ _echo "Installation of Ruby..."
 mkdir /tmp/ruby && cd /tmp/ruby
 #curl --progress https://ftp.ruby-lang.org/pub/ruby/stable-snapshot.tar.gz | tar xz
 curl --progress http://cache.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p481.tar.gz | tar xz
-cd *
+_log "$(ls -l ruby*)"
+cd ruby*
 ./configure --disable-install-rdoc 2>&1 | tee -a ${LogFile}
 make 2>&1 | tee -a ${LogFile}
 sudo make install 2>&1 | tee -a ${LogFile}
