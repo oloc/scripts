@@ -4,7 +4,8 @@
 # 2. Modify the configuration files as suggested
 # 3. Launch again the script
 #
-# 18/06/2014 - oloc - Force the usage of sudo
+# 18/06/2014 - oloc - Version 0.3 - Use of a temporary file for sql statement in order to set values
+# 18/06/2014 - oloc - Version 0.2 - Force the usage of sudo
 # 13/06/2014 - oloc - First version
 
 Name=gitlab
@@ -82,7 +83,7 @@ _echo "Installation of Mysql..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get install -q -y mysql-server mysql-client libmysqlclient-dev 2>&1 | tee -a ${LogFile}
 sleep 3
-mysql -uroot -e <<EOSQL
+cat > /tmp/mysql.inst  <<EOSQL
 "UPDATE mysql.user SET Password=PASSWORD('${MysqlPwdRoot}') WHERE User='root';
 FLUSH PRIVILEGES;"
 CREATE USER '${User}'@'localhost' IDENTIFIED BY '${MysqlPwdUser}';
@@ -91,7 +92,10 @@ CREATE DATABASE IF NOT EXISTS `gitlabhq_production` DEFAULT CHARACTER SET `utf8`
 GRANT SELECT, LOCK TABLES, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER ON `gitlabhq_production`.* TO '${User}'@'localhost';
 quit;
 EOSQL
-mysql_secure_installation 2>&1 | tee -a ${LogFile}
+_log "SQL Statement to run :"
+cat /tmp/mysql.inst >> ${LogFile}
+mysql -uroot </tmp/mysql.inst
+#mysql_secure_installation 2>&1 | tee -a ${LogFile}
 
 ###################
 _echo "Installation of GitLab..."
