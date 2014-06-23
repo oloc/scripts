@@ -41,11 +41,11 @@ if [ ! -a /tmp/${Name}.flag ] ; then
 ###################
 _echo "Creation of user ${User}"
 adduser --disabled-login --gecos 'GitLab' ${User}
-mkdir ${LogDir}/${Name} && sudo chown ${User}:${User} ${LogDir}/${Name}
+mkdir ${LogDir}/${Name} && chown ${User}:${User} ${LogDir}/${Name}
 
 ###################
 _echo "Installation of the prerequisites..."
-apt-get update -y && sudo apt-get upgrade -y
+apt-get update -y && apt-get upgrade -y
 apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server redis-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate 2>&1 | tee -a ${LogFile}
 apt-get install -y git-core 2>&1 | tee -a ${LogFile}
 
@@ -74,6 +74,9 @@ gem install bundler --no-ri --no-rdoc 2>&1 | tee -a ${LogFile}
 ###################
 _echo "Installation of the shell gitlab..."
 cd ${InstDir}
+mkdir -p ${instDir}/gitlab-shell && chown ${User}:${USer} ${InstDir}/gitlab-shell
+_log "$(ls -al ${InstDir})"
+_echo "sudo -u ${User} -H git clone https://github.com/gitlabhq/gitlab-shell.git -b v1.9.0"
 sudo -u ${User} -H git clone https://github.com/gitlabhq/gitlab-shell.git -b v1.9.0
 cd gitlab-shell
 sudo -u ${User} -H cp config.yml.example config.yml
@@ -99,11 +102,14 @@ mysql -uroot </tmp/mysql.inst
 ###################
 _echo "Installation of GitLab..."
 cd $InstDir
+mkdir -p ${InstDir}/${Name} && chown ${User}:${USer} ${InstDir}/${Name}
+_log "$(ls -al ${InstDir})"
+_echo "sudo -u ${User} -H git clone https://github.com/gitlabhq/gitlabhq.git -b 6-4-stable ${Name}"
 sudo -u ${User} -H git clone https://github.com/gitlabhq/gitlabhq.git -b 6-4-stable ${Name}
 cd ${InstDir}/${Name}
-sudo -u ${User} -H mkdir tmp/pids/      && sudo chmod -R u+rwX  tmp/pids/
-sudo -u ${User} -H mkdir tmp/sockets/   && sudo chmod -R u+rwX  tmp/sockets/
-sudo -u ${User} -H mkdir public/uploads && sudo chmod -R u+rwX  public/uploads
+sudo -u ${User} -H mkdir tmp/pids/      && chmod -R u+rwX  tmp/pids/
+sudo -u ${User} -H mkdir tmp/sockets/   && chmod -R u+rwX  tmp/sockets/
+sudo -u ${User} -H mkdir public/uploads && chmod -R u+rwX  public/uploads
 sudo -u ${User} -H mv log log.old       && sudo -u ${User} -H ln -s /var/log/${Name}/ log
 sudo -u ${User} -H mkdir $InstDir/gitlab-satellites
 sudo -u ${User} -H cp config/initializers/rack_attack.rb.example config/initializers/rack_attack.rb
