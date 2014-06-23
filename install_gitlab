@@ -90,7 +90,6 @@ CREATE USER '${User}'@'localhost' IDENTIFIED BY '${MysqlPwdUser}';
 SET storage_engine=INNODB;
 CREATE DATABASE IF NOT EXISTS \`gitlabhq_production\` DEFAULT CHARACTER SET \`utf8\` COLLATE \`utf8_unicode_ci\`;
 GRANT SELECT, LOCK TABLES, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER ON \`gitlabhq_production\`.* TO '${User}'@'localhost';
-quit;
 EOSQL
 _log "SQL Statement to run :"
 cat /tmp/mysql.inst >> ${LogFile}
