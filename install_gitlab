@@ -13,6 +13,9 @@ User=${Name}
 InstDir=/opt
 MysqlPwdRoot=lqsym
 MysqlPwdUser=baltig
+GitlabUrl=https://github.com/gitlabhq/gitlabhq.git
+RubyUrl=https://ftp.ruby-lang.org/pub/ruby/stable-snapshot.tar.gz
+#RubyUrl=http://cache.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p481.tar.gz
 LogDir=/var/log
 LogFile=${LogDir}/${Name}.$(date +%Y%m%d.%H%M%S).log
 
@@ -62,14 +65,14 @@ apt-get install -y python-docutils 2>&1 | tee -a ${LogFile}
 ###################
 _echo "Installation of Ruby..."
 mkdir /tmp/ruby && cd /tmp/ruby
-#curl --progress https://ftp.ruby-lang.org/pub/ruby/stable-snapshot.tar.gz | tar xz
-curl --progress http://cache.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p481.tar.gz | tar xz
+_echo "Retrieving ${RubyUrl}..."
+curl --progress ${RubyUrl} | tar xz
 _log "$(ls -l ruby*)"
 cd ruby*
-./configure --disable-install-rdoc 2>&1 | tee -a ${LogFile}
-make 2>&1 | tee -a ${LogFile}
-make install 2>&1 | tee -a ${LogFile}
-gem install bundler --no-ri --no-rdoc 2>&1 | tee -a ${LogFile}
+./configure --disable-install-rdoc 2>&1 	| tee -a ${LogFile}
+make 2>&1 					| tee -a ${LogFile}
+make install 2>&1 				| tee -a ${LogFile}
+gem install bundler --no-ri --no-rdoc 2>&1 	| tee -a ${LogFile}
 
 ###################
 _echo "Installation of the shell gitlab..."
@@ -89,7 +92,7 @@ sleep 3
 cat > /tmp/mysql.inst  <<EOSQL
 UPDATE mysql.user SET Password=PASSWORD('${MysqlPwdRoot}') WHERE User='root';
 FLUSH PRIVILEGES;
-CREATE USER '${User}'@'localhost' IDENTIFIED BY '${MysqlPwdUser}';
+CREATE USER IF NOT EXISTS '${User}'@'localhost' IDENTIFIED BY '${MysqlPwdUser}';
 SET storage_engine=INNODB;
 CREATE DATABASE IF NOT EXISTS \`gitlabhq_production\` DEFAULT CHARACTER SET \`utf8\` COLLATE \`utf8_unicode_ci\`;
 GRANT SELECT, LOCK TABLES, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER ON \`gitlabhq_production\`.* TO '${User}'@'localhost';
@@ -97,6 +100,10 @@ EOSQL
 _log "SQL Statement to run :"
 cat /tmp/mysql.inst >> ${LogFile}
 mysql -uroot </tmp/mysql.inst
+if [ $? -eq 0 ] ; then
+	_echo "Second try with the password..."
+	mysql -uroot -p${MysqlPwdRoot} </tmp/mysql.inst
+fi
 #mysql_secure_installation 2>&1 | tee -a ${LogFile}
 
 ###################
@@ -104,8 +111,8 @@ _echo "Installation of GitLab..."
 cd $InstDir
 mkdir -p ${InstDir}/${Name} && chown ${User}:${USer} ${InstDir}/${Name}
 _log "$(ls -al ${InstDir})"
-_echo "sudo -u ${User} -H git clone https://github.com/gitlabhq/gitlabhq.git -b 6-4-stable ${Name}"
-sudo -u ${User} -H git clone https://github.com/gitlabhq/gitlabhq.git -b 6-4-stable ${Name}
+_echo "sudo -u ${User} -H git clone ${GitlabUrl} -b 6-4-stable ${Name}"
+sudo -u ${User} -H git clone ${GitlabUrl} -b 6-4-stable ${Name}
 cd ${InstDir}/${Name}
 sudo -u ${User} -H mkdir tmp/pids/      && chmod -R u+rwX  tmp/pids/
 sudo -u ${User} -H mkdir tmp/sockets/   && chmod -R u+rwX  tmp/sockets/
@@ -140,7 +147,9 @@ else
 
 ###################
 _echo "Gitlab deploiement..."
+_echo "bundle install --deployment --without development test postgres aws"
 sudo -u ${User} -H bundle install --deployment --without development test postgres aws
+_echo "bundle exec rake gitlab:setup RAILS_ENV=production"
 sudo -u ${User} -H bundle exec rake gitlab:setup RAILS_ENV=production
 cp lib/support/init.d/gitlab /etc/init.d/gitlab
 chmod +x /etc/init.d/gitlab
