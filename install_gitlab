@@ -4,8 +4,10 @@
 # 2. Modify the configuration files as suggested
 # 3. Launch again the script
 #
-# 18/06/2014 - oloc - Version 0.3 - Use of a temporary file for sql statement in order to set values
-# 18/06/2014 - oloc - Version 0.2 - Force the usage of sudo
+# 28/07/2014 - oloc - Version 0.4.0 - Installations in dedicated functions
+# 28/07/2014 - oloc - Version 0.3.1 - curl insecure correction
+# 18/06/2014 - oloc - Version 0.3.0 - Use of a temporary file for sql statement in order to set values
+# 18/06/2014 - oloc - Version 0.2.0 - Force the usage of sudo
 # 13/06/2014 - oloc - First version
 
 Name=gitlab
@@ -14,11 +16,13 @@ InstDir=/opt
 MysqlPwdRoot=lqsym
 MysqlPwdUser=baltig
 GitlabUrl=https://github.com/gitlabhq/gitlabhq.git
-RubyUrl=https://ftp.ruby-lang.org/pub/ruby/stable-snapshot.tar.gz
-#RubyUrl=http://cache.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p481.tar.gz
+RubyUrl=https://ftp.ruby-lang.org/pub/ruby
+RubyFile=stable-snapshot.tar.gz
+RubyTmpDir=/tmp/ruby
 LogDir=/var/log
 LogFile=${LogDir}/${Name}.$(date +%Y%m%d.%H%M%S).log
 
+###########
 if [ $USER != 'root' ] ; then
 	echo "Please use sudo or root account."
 	exit
@@ -34,62 +38,66 @@ _log() {
 echo "$(date +%Y%m%d-%H%M%S) * $1" >> ${LogFile}
 }
 
-###################
-# Start annoucement
-_log "${Name} - start."
-_log "Log is here: ${LogFile}"
+_createUser() {
+	_echo "Creation of user ${User}"
+	adduser --disabled-login --gecos 'GitLab' ${User}
+	mkdir ${LogDir}/${Name} && chown ${User}:${User} ${LogDir}/${Name}
+}
 
-if [ ! -a /tmp/${Name}.flag ] ; then
+_installPrerequisites() {
+	_echo "Installation of the prerequisites..."
+	apt-get update -y && apt-get upgrade -y
+	apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server redis-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate 2>&1 | tee -a ${LogFile}
+	apt-get install -y git-core 2>&1 | tee -a ${LogFile}
+}
 
-###################
-_echo "Creation of user ${User}"
-adduser --disabled-login --gecos 'GitLab' ${User}
-mkdir ${LogDir}/${Name} && chown ${User}:${User} ${LogDir}/${Name}
+_installPython(){
+	_log "$(python2 --version)"
+	if [ "$(python2 --version)" != "Python 2.7.3" ] ; then
+		_echo "Installation of python..."
+		apt-get install -y python    2>&1 | tee -a ${LogFile}
+		apt-get install -y python2.7 2>&1 | tee -a ${LogFile}
+		ln -s /usr/bin/python /usr/bin/python2
+	fi
+	apt-get install -y python-docutils 2>&1 | tee -a ${LogFile}
+}
 
-###################
-_echo "Installation of the prerequisites..."
-apt-get update -y && apt-get upgrade -y
-apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server redis-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate 2>&1 | tee -a ${LogFile}
-apt-get install -y git-core 2>&1 | tee -a ${LogFile}
+_installRuby(){
+	typeset rubyFile=$(echo ${RubyFile} | cur -d. -f1)
 
-###################
-_log "$(python2 --version)"
-if [ "$(python2 --version)" != "Python 2.7.3" ] ; then
-	_echo "Installation of python..."
-	apt-get install -y python    2>&1 | tee -a ${LogFile}
-	apt-get install -y python2.7 2>&1 | tee -a ${LogFile}
-	ln -s /usr/bin/python /usr/bin/python2
-fi
-apt-get install -y python-docutils 2>&1 | tee -a ${LogFile}
+	_echo "Installation of Ruby..."
+	rm -Rf ${RubyTmpDir} 2>&1 1>/dev/null
+	mkdir ${RubyTmpDir} && cd ${RubyTmpDir} 
+	_echo "Retrieving ${RubyUrl}/${RubyFile}..."
+	curl --progress --insecure ${RubyUrl}/${RubyFile} | tar xz
+	_log "$(ls -l ${rubyFile}*)"
+	cd ${RubyTmpDir}/${rubyFile}*
+	_echo "configure..."
+	./configure --disable-install-rdoc 2>&1 	| tee -a ${LogFile}
+	_echo "make..."
+	make 2>&1 					| tee -a ${LogFile}
+	_echo "make install..."
+	make install 2>&1 				| tee -a ${LogFile}
+	gem install bundler --no-ri --no-rdoc 2>&1 	| tee -a ${LogFile}
+}
 
-###################
-_echo "Installation of Ruby..."
-mkdir /tmp/ruby && cd /tmp/ruby
-_echo "Retrieving ${RubyUrl}..."
-curl --progress ${RubyUrl} | tar xz
-_log "$(ls -l ruby*)"
-cd ruby*
-./configure --disable-install-rdoc 2>&1 	| tee -a ${LogFile}
-make 2>&1 					| tee -a ${LogFile}
-make install 2>&1 				| tee -a ${LogFile}
-gem install bundler --no-ri --no-rdoc 2>&1 	| tee -a ${LogFile}
+_installShell() {
+	_echo "Installation of the shell gitlab..."
+	cd ${InstDir}
+	mkdir -p ${instDir}/gitlab-shell && chown ${User}:${USer} ${InstDir}/gitlab-shell
+	_log "$(ls -al ${InstDir})"
+	_echo "sudo -u ${User} -H git clone https://github.com/gitlabhq/gitlab-shell.git -b v1.9.0"
+	sudo -u ${User} -H git clone https://github.com/gitlabhq/gitlab-shell.git -b v1.9.0
+	cd gitlab-shell
+	sudo -u ${User} -H cp config.yml.example config.yml
+}
 
-###################
-_echo "Installation of the shell gitlab..."
-cd ${InstDir}
-mkdir -p ${instDir}/gitlab-shell && chown ${User}:${USer} ${InstDir}/gitlab-shell
-_log "$(ls -al ${InstDir})"
-_echo "sudo -u ${User} -H git clone https://github.com/gitlabhq/gitlab-shell.git -b v1.9.0"
-sudo -u ${User} -H git clone https://github.com/gitlabhq/gitlab-shell.git -b v1.9.0
-cd gitlab-shell
-sudo -u ${User} -H cp config.yml.example config.yml
-
-###################
-_echo "Installation of Mysql..."
-export DEBIAN_FRONTEND=noninteractive
-apt-get install -q -y mysql-server mysql-client libmysqlclient-dev 2>&1 | tee -a ${LogFile}
-sleep 3
-cat > /tmp/mysql.inst  <<EOSQL
+_installMysql() {
+	_echo "Installation of Mysql..."
+	export DEBIAN_FRONTEND=noninteractive
+	apt-get install -q -y mysql-server mysql-client libmysqlclient-dev 2>&1 | tee -a ${LogFile}
+	sleep 3
+	cat > /tmp/mysql.inst  <<EOSQL
 UPDATE mysql.user SET Password=PASSWORD('${MysqlPwdRoot}') WHERE User='root';
 FLUSH PRIVILEGES;
 CREATE USER IF NOT EXISTS '${User}'@'localhost' IDENTIFIED BY '${MysqlPwdUser}';
@@ -97,39 +105,57 @@ SET storage_engine=INNODB;
 CREATE DATABASE IF NOT EXISTS \`gitlabhq_production\` DEFAULT CHARACTER SET \`utf8\` COLLATE \`utf8_unicode_ci\`;
 GRANT SELECT, LOCK TABLES, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER ON \`gitlabhq_production\`.* TO '${User}'@'localhost';
 EOSQL
-_log "SQL Statement to run :"
-cat /tmp/mysql.inst >> ${LogFile}
-mysql -uroot </tmp/mysql.inst
-if [ $? -eq 0 ] ; then
-	_echo "Second try with the password..."
-	mysql -uroot -p${MysqlPwdRoot} </tmp/mysql.inst
-fi
-#mysql_secure_installation 2>&1 | tee -a ${LogFile}
+	_log "SQL Statement to run :"
+	cat /tmp/mysql.inst >> ${LogFile}
+	mysql -uroot </tmp/mysql.inst
+	if [ $? -eq 0 ] ; then
+		_echo "Second try with the password..."
+		mysql -uroot -p${MysqlPwdRoot} </tmp/mysql.inst
+	fi
+	#mysql_secure_installation 2>&1 | tee -a ${LogFile}
+}
+
+_installGitlab() {
+	_echo "Installation of GitLab..."
+	cd $InstDir
+	mkdir -p ${InstDir}/${Name} && chown ${User}:${USer} ${InstDir}/${Name}
+	_log "$(ls -al ${InstDir})"
+	_echo "sudo -u ${User} -H git clone ${GitlabUrl} -b 6-4-stable ${Name}"
+	sudo -u ${User} -H git clone ${GitlabUrl} -b 6-4-stable ${Name}
+	cd ${InstDir}/${Name}
+	sudo -u ${User} -H mkdir tmp/pids/      && chmod -R u+rwX  tmp/pids/
+	sudo -u ${User} -H mkdir tmp/sockets/   && chmod -R u+rwX  tmp/sockets/
+	sudo -u ${User} -H mkdir public/uploads && chmod -R u+rwX  public/uploads
+	sudo -u ${User} -H mv log log.old       && sudo -u ${User} -H ln -s /var/log/${Name}/ log
+	sudo -u ${User} -H mkdir $InstDir/gitlab-satellites
+	sudo -u ${User} -H cp config/initializers/rack_attack.rb.example config/initializers/rack_attack.rb
+	sudo -u ${User} -H cp config/gitlab.yml.example config/gitlab.yml
+	sudo -u ${User} -H cp config/unicorn.rb.example config/unicorn.rb
+	sudo -u ${User} -H cp config/database.yml.mysql config/database.yml
+	sudo -u ${User} -H chmod o-rwx config/database.yml
+}
+
+_installNginx() {
+	_echo "Installation of Nginx..."
+	apt-get install -y nginx
+	cp lib/support/nginx/gitlab /etc/nginx/sites-available/gitlab
+	ln -s /etc/nginx/sites-available/gitlab /etc/nginx/sites-enabled/gitlab
+}
 
 ###################
-_echo "Installation of GitLab..."
-cd $InstDir
-mkdir -p ${InstDir}/${Name} && chown ${User}:${USer} ${InstDir}/${Name}
-_log "$(ls -al ${InstDir})"
-_echo "sudo -u ${User} -H git clone ${GitlabUrl} -b 6-4-stable ${Name}"
-sudo -u ${User} -H git clone ${GitlabUrl} -b 6-4-stable ${Name}
-cd ${InstDir}/${Name}
-sudo -u ${User} -H mkdir tmp/pids/      && chmod -R u+rwX  tmp/pids/
-sudo -u ${User} -H mkdir tmp/sockets/   && chmod -R u+rwX  tmp/sockets/
-sudo -u ${User} -H mkdir public/uploads && chmod -R u+rwX  public/uploads
-sudo -u ${User} -H mv log log.old       && sudo -u ${User} -H ln -s /var/log/${Name}/ log
-sudo -u ${User} -H mkdir $InstDir/gitlab-satellites
-sudo -u ${User} -H cp config/initializers/rack_attack.rb.example config/initializers/rack_attack.rb
-sudo -u ${User} -H cp config/gitlab.yml.example config/gitlab.yml
-sudo -u ${User} -H cp config/unicorn.rb.example config/unicorn.rb
-sudo -u ${User} -H cp config/database.yml.mysql config/database.yml
-sudo -u ${User} -H chmod o-rwx config/database.yml
+# Start annoucement
+_log "${Name} - start."
+_log "Log is here: ${LogFile}"
 
-###################
-_echo "Installation of Nginx..."
-apt-get install -y nginx
-cp lib/support/nginx/gitlab /etc/nginx/sites-available/gitlab
-ln -s /etc/nginx/sites-available/gitlab /etc/nginx/sites-enabled/gitlab
+if [ ! -a /tmp/${Name}.flag ] ; then
+	_createUser
+	_installPrerequisites
+	_installPython
+	_installRuby
+	_installShell
+	_installMysql
+	_installGitlab
+	_installNginx
 
 _echo "****************************************************************************"
 _echo "*** You have to modify the configuration of :"
