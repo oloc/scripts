@@ -63,7 +63,7 @@ _installPython(){
 }
 
 _installRuby(){
-	typeset rubyFile=$(echo ${RubyFile} | cur -d. -f1)
+	typeset rubyFile=$(echo ${RubyFile} | cut -d. -f1)
 
 	_echo "Installation of Ruby..."
 	rm -Rf ${RubyTmpDir} 2>&1 1>/dev/null
