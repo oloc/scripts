@@ -178,6 +178,7 @@ _echo "bundle install --deployment --without development test postgres aws"
 sudo -u ${User} -H bundle install --deployment --without development test postgres aws
 _echo "bundle exec rake gitlab:setup RAILS_ENV=production"
 sudo -u ${User} -H bundle exec rake gitlab:setup RAILS_ENV=production
+sudo -u ${User} -H bundle exec rake assets:precompile RAILS_ENV=production
 cp lib/support/init.d/gitlab /etc/init.d/gitlab
 chmod +x /etc/init.d/gitlab
 update-rc.d gitlab defaults 21
