@@ -173,6 +173,7 @@ else
 
 ###################
 _echo "Gitlab deploiement..."
+cd ${InstDir}/${Name}
 _echo "bundle install --deployment --without development test postgres aws"
 sudo -u ${User} -H bundle install --deployment --without development test postgres aws
 _echo "bundle exec rake gitlab:setup RAILS_ENV=production"
