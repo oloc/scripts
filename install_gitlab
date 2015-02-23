@@ -147,7 +147,7 @@ _installNginx() {
 _log "${Name} - start."
 _log "Log is here: ${LogFile}"
 
-if [ ! -a /tmp/${Name}.flag ] ; then
+if [ ! -f /tmp/${Name}.flag ] ; then
 	_createUser
 	_installPrerequisites
 	_installPython
