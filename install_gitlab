@@ -127,7 +127,7 @@ _installGitlab() {
 	sudo -u ${User} -H mkdir tmp/sockets/   && chmod -R u+rwX  tmp/sockets/
 	sudo -u ${User} -H mkdir public/uploads && chmod -R u+rwX  public/uploads
 	sudo -u ${User} -H mv log log.old       && sudo -u ${User} -H ln -s /var/log/${Name}/ log
-	sudo -u ${User} -H mkdir $InstDir/gitlab-satellites
+	mkdir ${InstDir}/gitlab-satellites && chown ${User}:${USer} ${InstDir}/gitlab-satellites
 	sudo -u ${User} -H cp config/initializers/rack_attack.rb.example config/initializers/rack_attack.rb
 	sudo -u ${User} -H cp config/gitlab.yml.example config/gitlab.yml
 	sudo -u ${User} -H cp config/unicorn.rb.example config/unicorn.rb
