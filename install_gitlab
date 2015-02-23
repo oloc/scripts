@@ -100,10 +100,9 @@ _installMysql() {
 	cat > /tmp/mysql.inst  <<EOSQL
 UPDATE mysql.user SET Password=PASSWORD('${MysqlPwdRoot}') WHERE User='root';
 FLUSH PRIVILEGES;
-CREATE USER IF NOT EXISTS '${User}'@'localhost' IDENTIFIED BY '${MysqlPwdUser}';
 SET storage_engine=INNODB;
 CREATE DATABASE IF NOT EXISTS \`gitlabhq_production\` DEFAULT CHARACTER SET \`utf8\` COLLATE \`utf8_unicode_ci\`;
-GRANT SELECT, LOCK TABLES, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER ON \`gitlabhq_production\`.* TO '${User}'@'localhost';
+GRANT SELECT, LOCK TABLES, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER ON \`gitlabhq_production\`.* TO '${User}'@'localhost' IDENTIFIED BY '${MysqlPwdUser}';
 EOSQL
 	_log "SQL Statement to run :"
 	cat /tmp/mysql.inst >> ${LogFile}
