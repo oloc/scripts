@@ -84,7 +84,7 @@ _installRuby(){
 _installShell() {
 	_echo "Installation of the shell gitlab..."
 	cd ${InstDir}
-	mkdir -p ${instDir}/gitlab-shell && chown ${User}:${USer} ${InstDir}/gitlab-shell
+	mkdir -p ${InstDir}/gitlab-shell && chown ${User}:${USer} ${InstDir}/gitlab-shell
 	_log "$(ls -al ${InstDir})"
 	_echo "sudo -u ${User} -H git clone https://github.com/gitlabhq/gitlab-shell.git -b v1.9.0"
 	sudo -u ${User} -H git clone https://github.com/gitlabhq/gitlab-shell.git -b v1.9.0
