@@ -86,8 +86,8 @@ _installShell() {
 	cd ${InstDir}
 	mkdir -p ${InstDir}/gitlab-shell && chown ${User}:${USer} ${InstDir}/gitlab-shell
 	_log "$(ls -al ${InstDir})"
-	_echo "sudo -u ${User} -H git clone https://github.com/gitlabhq/gitlab-shell.git -b v1.9.0"
-	sudo -u ${User} -H git clone https://github.com/gitlabhq/gitlab-shell.git -b v1.9.0
+	_echo "sudo -u ${User} -H git clone https://github.com/gitlabhq/gitlab-shell.git -b v2.5.3"
+	sudo -u ${User} -H git clone https://github.com/gitlabhq/gitlab-shell.git -b v2.5.3
 	cd gitlab-shell
 	sudo -u ${User} -H cp config.yml.example config.yml
 }
@@ -119,8 +119,8 @@ _installGitlab() {
 	cd $InstDir
 	mkdir -p ${InstDir}/${Name} && chown ${User}:${USer} ${InstDir}/${Name}
 	_log "$(ls -al ${InstDir})"
-	_echo "sudo -u ${User} -H git clone ${GitlabUrl} -b 6-4-stable ${Name}"
-	sudo -u ${User} -H git clone ${GitlabUrl} -b 6-4-stable ${Name}
+	_echo "sudo -u ${User} -H git clone ${GitlabUrl} -b 7-8-stable ${Name}"
+	sudo -u ${User} -H git clone ${GitlabUrl} -b 7-8-stable ${Name}
 	cd ${InstDir}/${Name}
 	sudo -u ${User} -H mkdir tmp/pids/      && chmod -R u+rwX  tmp/pids/
 	sudo -u ${User} -H mkdir tmp/sockets/   && chmod -R u+rwX  tmp/sockets/
