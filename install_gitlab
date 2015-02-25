@@ -47,7 +47,7 @@ _createUser() {
 _installPrerequisites() {
 	_echo "Installation of the prerequisites..."
 	apt-get update -y && apt-get upgrade -y
-	apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server redis-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate 2>&1 | tee -a ${LogFile}
+	apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server redis-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate cmake emacsen-common libxmlrpc-core-c3 2>&1 | tee -a ${LogFile}
 	apt-get install -y git-core 2>&1 | tee -a ${LogFile}
 }
 
@@ -172,12 +172,10 @@ else
 
 ###################
 _echo "Gitlab deploiement..."
-cd ${InstDir}/${Name}
 _echo "bundle install --deployment --without development test postgres aws"
 sudo -u ${User} -H bundle install --deployment --without development test postgres aws
 _echo "bundle exec rake gitlab:setup RAILS_ENV=production"
 sudo -u ${User} -H bundle exec rake gitlab:setup RAILS_ENV=production
-sudo -u ${User} -H bundle exec rake assets:precompile RAILS_ENV=production
 cp lib/support/init.d/gitlab /etc/init.d/gitlab
 chmod +x /etc/init.d/gitlab
 update-rc.d gitlab defaults 21
