@@ -1,0 +1,57 @@
+#
+# 11/04/2015 - oloc - first format
+
+Name=$(basename $0)
+App=kodi
+User=${App}
+DatDir=/var/lib/${App}
+LogDir=/var/log/${App}
+LogFile=/var/log/${Name}.$(date +%Y%m%d.%H%M%S).log
+
+###################
+# Functions
+_echo() {
+        echo "$(date +%Y%m%d-%H%M%S) - $1" | tee -a ${LogFile}
+}
+
+_echo "Account creation in progress..."
+useradd -m -s /bin/false ${User}
+addgroup input --system
+adduser ${User} input
+adduser ${User} audio
+adduser ${User} video
+adduser ${User} dialout
+adduser ${User} plugdev
+
+apt-get update
+apt-get install -y ${App}
+
+/etc/init.d/{App} stop
+/etc/init.d/{App} status
+
+_echo "Directories creation in progress..."
+mkdir -p ${DatDir} && chown -R ${User}:${User} ${DatDir}
+mkdir -p ${LogDir} && chown -R ${User}:${User} ${LogDir}
+
+CfgFile=/etc/default/${App}
+_echo "Creation of the ${CfgFile}"
+rm ${CfgFile}.bkp 2>/dev/null && mv ${CfgFile} ${CfgFile}.bkp 2>/dev/null
+echo -e "\# Set this to 1 to enable startup\nENABLED=1" > ${CfgFile}
+echo -e "\# The user to run ${App} as\nUSER=${User}" >> ${CfgFile}
+echo -e "\# Adjust niceness of ${App} (decrease for higher priority)\nNICE=0" >> ${CfgFile}
+echo 'echo "Enable=$ENABLED User=$USER Nice=$NICE Pid=$(cat $PIDFILE)"' >> ${CfgFile}
+
+_echo "Rules management in progress..."
+RulesFile=/etc/udev/rules.d/99-input.rules
+echo 'SUBSYSTEM=="input", GROUP="input", MODE="0660"' > ${RulesFile}
+
+_echo "Location management in progress..."
+cp -Rf $HOME/.${App} ${DatDir}/.${App}
+chown -R ${User}:${User} ${DatDir}/.${App}
+ln -s ${DatDir}/.${App} /home/${User}/.{App}                 && chown -h ${User}:${User} /home/${User}/.{App}
+ln -s ${DatDir}/.${App}/temp/${App}.log ${LogDir}/${App}.log && chown -h ${User}:${User} ${LogDir}/${App}.log
+
+/etc/init.d/{App} start
+/etc/init.d/{App} status
+
+mv ${LogFile} ${LogDir}/
